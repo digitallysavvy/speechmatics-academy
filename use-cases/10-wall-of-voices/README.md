@@ -4,6 +4,8 @@
 
 Melia (`model: "melia-1"`, `language: "multi"`) tags every word with its own ISO code, on partials as well as finals. Everything on this screen is a direct rendering of `alternatives[0].language`: colour, label, text direction. Nobody configures anything, and nothing is told which languages to expect.
 
+![Recording of the app: an English sentence lands on the wall, then one drops mid-sentence into Bulgarian and the colour flips at the exact word, then nine more speakers fill the wall and the counter reaches eleven languages](assets/wall-of-voices.gif)
+
 The moment worth rehearsing is the code-switch. Open in English, drop one clause into another language mid-sentence, come back out, and the colour on the wall flips at the exact word the language did.
 
 ## What You'll Learn
