@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Dark is PINNED: a presenter's laptop is usually on the OS light theme. Remove the
+       data-theme attribute above to follow the OS instead. -->
+  <meta name="color-scheme" content="dark light" />
+
+  <title>Wall of Voices</title>
+
+  <!-- styles.css is the only presentation source. No font link and no @import anywhere:
+       a webfont stalling on conference Wi-Fi would re-flow the wall mid-sentence. -->
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <h1>Wall of <span class="brand__accent">Voices</span></h1>
+
+    <div class="brand__line">
+      <p class="tagline">One microphone. Nobody told it which languages to expect.</p>
+
+      <!-- The key-present indicator; it opens in the no-key state. -->
+      <p id="status" class="status status--nokey" role="status" aria-live="polite">No key</p>
+    </div>
+  </div>
+
+  <div id="counter" class="counter" role="status" aria-live="polite"
+       aria-label="Distinct languages detected">
+    <span id="counter-value" class="counter__value">0</span>
+    <span class="counter__label">languages</span>
+  </div>
+</header>
+
+<main class="stage">
+
+  <!-- Committed utterances only, in a vertical-scroll GRID that styles.css owns.
+       role="log" is declared here, not set from JS, so the two cannot contradict. -->
+  <section id="wall" class="wall" aria-label="Wall of utterances"
+           role="log" aria-live="polite">
+    <!-- .utterance tiles are appended here by wall.js. -->
+  </section>
+
+  <!-- The in-flight partial, and a SIBLING of #wall so an accumulating wall can never
+       scroll the money moment away. aria-hidden: it is rewritten several times a second,
+       and the same words reach assistive tech seconds later as a tile above. -->
+  <section id="live-line" class="live-line is-empty" dir="auto" aria-hidden="true">
+    <span class="live-line__placeholder">Waiting for a voice</span>
+  </section>
+
+</main>
+
+<footer class="footer">
+
+  <!-- Identity is never colour-alone, so every language names itself here. The eyebrow is
+       OUTSIDE #legend because main.js empties #legend on reset. -->
+  <div class="footer__row">
+    <p class="eyebrow">Languages detected</p>
+    <section id="legend" class="legend" aria-label="Languages detected so far"></section>
+  </div>
+
+  <div id="ribbon" class="ribbon"></div>
+
+  <!-- BRING YOUR OWN KEY: a deployment holds no credential. The key lives in
+       sessionStorage (localStorage only if Remember is ticked) and is never logged or put
+       in a URL. No name attribute, autocomplete off - nothing here is a login field. -->
+  <div id="keybar" class="keybar">
+    <label class="eyebrow keybar__label" for="api-key">Speechmatics key</label>
+
+    <div class="keybar__field">
+      <input id="api-key" class="keybar__input" type="password"
+             placeholder="Paste your API key"
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-describedby="keybar-note" />
+      <button id="api-key-toggle" class="keybar__eye" type="button"
+              aria-controls="api-key" title="Show or hide the key">Show</button>
+    </div>
+
+    <label class="keybar__remember">
+      <input id="api-key-remember" type="checkbox" />
+      <span>Remember on this device</span>
+    </label>
+
+    <button id="api-key-clear" class="keybar__clear" type="button"
+            title="Forget the key on this device">Clear</button>
+
+    <p id="keybar-note" class="keybar__note">Stays in this browser. Sent only to Speechmatics.</p>
+  </div>
+
+  <div class="controls">
+    <!-- Ships disabled: no key, no Start. main.js enables it once a key exists. -->
+    <button id="toggle-btn" class="mic-btn" type="button" disabled>
+      <span class="mic-btn__icon" aria-hidden="true"></span>
+      <span id="toggle-label">Loading...</span>
+    </button>
+
+    <!-- Reassurance that the passed mic is alive: a room WILL cover the capsule. -->
+    <div class="meter" aria-hidden="true">
+      <div id="meter-fill" class="meter__fill"></div>
+    </div>
+
+    <!-- Clears wall, counter, legend and ribbon together, without stopping the session. -->
+    <button id="reset-btn" class="reset-btn" type="button"
+            title="Clear the wall, counter, legend and ribbon">Clear wall</button>
+  </div>
+
+  <p id="error" class="error" role="alert" hidden></p>
+
+</footer>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
