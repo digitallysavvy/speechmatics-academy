@@ -5,6 +5,11 @@ target-version = "py312"
 line-length = 120
 
 exclude = [
+    # Ruff formats Python inside Markdown fenced blocks. README snippets in this
+    # repo are deliberately partial and elided for teaching, so they are not
+    # formatter input. Without this, `ruff format --check .` fails on 21
+    # pre-existing READMEs and every PR goes red regardless of its contents.
+    "*.md",
     "venv",
     ".venv",
     "node_modules",

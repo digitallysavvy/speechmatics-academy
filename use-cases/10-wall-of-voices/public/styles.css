@@ -1,0 +1,1065 @@
+/* ============================================================================
+   Wall of Voices - styles, and THE ONLY PLACE PRESENTATION LIVES: the JS emits
+   class names, data-series slot numbers, dir/lang and the `hidden` property, and
+   every colour, size and layout decision is made here. The two exceptions are
+   data-bound geometry - the #meter-fill width and the .ribbon__seg flex-grow.
+
+   Render target is a projector in a dim room read from the back of the hall, so
+   dark is the default and the media queries only shrink things DOWN.
+
+   Three things not to break:
+     1. #wall is a vertical-scroll GRID. It shipped once as a wrapping flex
+        column: tiles spilled sideways and follow-the-newest silently died.
+     2. --series-1..8 are CVD-validated categorical slots, not brand colours, and
+        they CYCLE past eight languages - so identity is never colour-alone.
+     3. Chrome is charged rent; the wall measures 58-70% of the viewport and stays
+        the dominant element (4 columns at 1280px, 8 at 2560px).
+
+   Chrome tokens come from the Flutter example next door (app_colors.dart), and
+   type asks for the three brand faces by NAME while fetching nothing: no <link>,
+   no @import, no @font-face. This runs on conference Wi-Fi. */
+
+/* Dark: the default and the design target. */
+:root {
+  color-scheme: dark light;
+
+  /* Ground is the Flutter app dark panel; tiles are darker wells cut into it,
+     because series-6 green clears 3:1 on #05252e (3.24) but not on #0d3c48. */
+  --plane:          #0d3c48;
+  --surface-1:      #05252e;
+  --surface-2:      #0a3441;
+  --text-primary:   #ffffff;
+  --text-secondary: #b8cdd3;
+  --text-muted:     #7f9aa2;
+  --border:         #16505e;
+  --border-soft:    rgba(255, 255, 255, .08);
+  --grid:           #16505e;
+
+  --accent:         #29a383;
+  --accent-ink:     #ffffff;
+  --accent-soft:    #0c3c3d;
+  --record:         #ff5212;   /* recordActive - the Stop state, nothing else */
+  --critical:       #e05a5a;   /* error rail; the app's #ba1a1a is unreadable here */
+  --good:           #29a383;
+  --warning:        #ffc53d;
+
+  /* The ribbon Other fold, achromatic so it reads as "not a category". */
+  --other:          #8a9aa0;
+
+  /* NOT brand tokens: these eight are validated and the chrome is not. */
+  --series-1:       #3987e5;
+  --series-2:       #d95926;
+  --series-3:       #199e70;
+  --series-4:       #c98500;
+  --series-5:       #d55181;
+  --series-6:       #008300;
+  --series-7:       #9085e9;
+  --series-8:       #e66767;
+
+  --radius:         18px;
+  --radius-sm:      12px;
+  --radius-pill:    999px;
+
+  /* --gap is multiplied by every row, so it is the biggest density lever. */
+  --gap:            clamp(10px, 1.05vw, 20px);
+  --pad:            clamp(12px, 1.15vw, 22px);
+
+  --font-display: "Space Grotesk", "Futura", ui-sans-serif, system-ui,
+                  "Segoe UI Variable Display", "Segoe UI", Roboto,
+                  "Helvetica Neue", Arial, sans-serif;
+  --font-body:    "DM Sans", ui-sans-serif, system-ui,
+                  "Segoe UI Variable Text", "Segoe UI", Roboto,
+                  "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    ui-monospace, "JetBrains Mono", "Cascadia Mono", "SF Mono",
+                  "Segoe UI Mono", "Roboto Mono", Menlo, Consolas, monospace;
+}
+
+/* Light: the OS preference, unless the page has pinned dark. */
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme="dark"])) {
+    color-scheme: light;
+
+    --plane:          #f8faf9;
+    --surface-1:      #ffffff;
+    --surface-2:      #f1f3f4;
+    --text-primary:   #1a1c1b;
+    --text-secondary: #5f6b66;
+    --text-muted:     #8a938e;
+    --border:         #e2e3e1;
+    --border-soft:    #edefee;
+    --grid:           #e2e3e1;
+
+    --accent:         #29a383;
+    --accent-ink:     #ffffff;
+    --accent-soft:    #d9f5ec;
+    --record:         #ff5212;
+    --critical:       #ba1a1a;
+    --good:           #29a383;
+    --warning:        #d97706;
+
+    --other:          #6f747d;
+
+    --series-1:       #2a78d6;
+    --series-2:       #eb6834;
+    --series-3:       #1baf7a;
+    --series-4:       #eda100;
+    --series-5:       #e87ba4;
+    --series-6:       #008300;
+    --series-7:       #4a3aa7;
+    --series-8:       #e34948;
+  }
+}
+
+/* Light: explicit override, and it wins over an OS set to dark. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --plane:          #f8faf9;
+  --surface-1:      #ffffff;
+  --surface-2:      #f1f3f4;
+  --text-primary:   #1a1c1b;
+  --text-secondary: #5f6b66;
+  --text-muted:     #8a938e;
+  --border:         #e2e3e1;
+  --border-soft:    #edefee;
+  --grid:           #e2e3e1;
+
+  --accent:         #29a383;
+  --accent-ink:     #ffffff;
+  --accent-soft:    #d9f5ec;
+  --record:         #ff5212;
+  --critical:       #ba1a1a;
+  --good:           #29a383;
+  --warning:        #d97706;
+
+  --other:          #6f747d;
+
+  --series-1:       #2a78d6;
+  --series-2:       #eb6834;
+  --series-3:       #1baf7a;
+  --series-4:       #eda100;
+  --series-5:       #e87ba4;
+  --series-6:       #008300;
+  --series-7:       #4a3aa7;
+  --series-8:       #e34948;
+}
+
+/* --slot inherits, so a word with its own data-series overrides its tile. */
+[data-series="1"] { --slot: var(--series-1); }
+[data-series="2"] { --slot: var(--series-2); }
+[data-series="3"] { --slot: var(--series-3); }
+[data-series="4"] { --slot: var(--series-4); }
+[data-series="5"] { --slot: var(--series-5); }
+[data-series="6"] { --slot: var(--series-6); }
+[data-series="7"] { --slot: var(--series-7); }
+[data-series="8"] { --slot: var(--series-8); }
+
+/* ========================================================== BASE ========= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Load-bearing for #error, which sets display:flex and ships with `hidden` on
+   it: the UA [hidden] rule loses to any author `display`. */
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  padding: var(--gap) var(--gap) calc(var(--gap) * .8);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: calc(var(--gap) * .8);
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: clamp(15px, 1vw, 20px);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;              /* the wall scrolls, the page never does */
+}
+
+.eyebrow {
+  flex: none;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(.58rem, .7vw, .8rem);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ========================================================= TOPBAR ======== */
+
+/* A GRID, not a flex row, and that is the fix for the clipped counter: the brand
+   column gives (minmax(0,1fr)) and the hero figure is sized first (auto). */
+.topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--gap);
+  min-width: 0;
+}
+
+.brand { min-width: 0; }
+
+.brand h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.75vw, 2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+
+.brand__accent { color: var(--accent); }
+
+.brand__line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .3em .8em;
+  margin-top: .3em;
+  min-width: 0;
+}
+
+.tagline {
+  margin: 0;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: clamp(.78rem, .92vw, 1.05rem);
+  line-height: 1.35;
+}
+
+/* The dot is a pseudo-element, so writing status.textContent cannot delete it.
+   State is expressed purely through the status--* class. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  margin: 0;
+  padding: .22em .8em .22em .62em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: clamp(.62rem, .74vw, .85rem);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status::before {
+  content: "";
+  flex: none;
+  width: .7em;
+  height: .7em;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.status--connecting::before { background: var(--warning); animation: pulse 1.1s ease-in-out infinite; }
+.status--live::before       { background: var(--good);    animation: pulse 1.7s ease-in-out infinite; }
+.status--live               { border-color: var(--accent); color: var(--text-primary); }
+.status--error::before      { background: var(--critical); }
+.status--error              { color: var(--text-primary); border-color: var(--critical); }
+
+/* No key yet: the state the page opens in, and the one Start is disabled for.
+   Amber and steady, so it cannot be read as the pulsing "connecting". */
+.status--nokey::before      { background: var(--warning); }
+.status--nokey              { color: var(--text-primary); border-color: var(--warning); }
+
+@keyframes pulse { 50% { opacity: .3; } }
+
+/* ======================================================== COUNTER ======== */
+
+/* The hero figure. A baseline ROW, not a stack: the numeral and the word are one
+   unbreakable run, so the topbar auto column sizes around both and LANGUAGES
+   cannot fall off the edge. padding-inline-end covers the letter-spacing track
+   after the LAST letter, outside the box the grid measured. */
+.counter {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: .32em;
+  padding-inline-end: .22em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.counter__value {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 6.6vw, 8rem);
+  font-weight: 800;
+  line-height: .82;
+  letter-spacing: -.045em;
+  color: var(--text-primary);
+}
+
+.counter__label {
+  font-family: var(--font-mono);
+  font-size: clamp(.66rem, .92vw, 1.1rem);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Transform + colour only, so the tick cannot drop frames on presentation
+   hardware. It flashes in the new language colour, so the bump reads as caused. */
+@keyframes counter-tick {
+  0%   { transform: scale(1);    color: var(--slot, var(--accent)); }
+  32%  { transform: scale(1.16); color: var(--slot, var(--accent)); }
+  100% { transform: scale(1);    color: var(--text-primary); }
+}
+
+/* Origin on the numeral trailing edge, so it grows away from the label. */
+.counter.is-tick .counter__value {
+  display: inline-block;
+  animation: counter-tick 520ms cubic-bezier(.32, 1.35, .5, 1);
+  transform-origin: 100% 60%;
+}
+
+/* ========================================================== STAGE ======== */
+
+.stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: calc(var(--gap) * .8);
+  min-height: 0;
+}
+
+/* ONE flow, decided here: a scrolling GRID filling across then down - oldest
+   top-left, newest bottom-right - on a vertical and ONLY vertical scroll axis. As
+   a wrapping flex column (flex-direction:column + flex-wrap:wrap) tiles spilled
+   sideways, overflow-x clipped them and the follow-the-newest scrollTop write
+   became a silent no-op. Row-major auto-flow also makes the tiers well-defined.
+
+   17rem is the density lever (4 columns at 1280px, 8 at 2560px) and a flat 272px,
+   because `rem` is the ROOT 16px - the fluid font-size is on `body`. */
+.wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  grid-auto-rows: min-content;
+  gap: var(--gap);
+
+  /* Packed to the BOTTOM, against the live line. `safe` falls back to start
+     alignment on overflow, so the earliest tiles never become unreachable. */
+  align-content: start;
+  align-content: safe end;
+
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-inline-end: 4px;      /* room for the scrollbar, not for chrome */
+  scrollbar-width: thin;
+  scrollbar-color: var(--grid) transparent;
+}
+
+.wall::-webkit-scrollbar { width: 8px; }
+.wall::-webkit-scrollbar-thumb { background: var(--grid); border-radius: 4px; }
+
+/* One cell, sized by the track and by its own content. min-width: 0 IS
+   load-bearing - a grid item defaults to min-width:auto, so one long unbroken
+   token would widen its track and skew the row. This rule is tier 0. */
+.utterance {
+  /* Tier knobs. Overridden by .utterance--tier-N below, nowhere else. */
+  --tier-type: 1;
+  --tier-pad:  1;
+  --tier-meta: 1;
+  --tier-rail: 5px;
+
+  max-width: 100%;
+  min-width: 0;
+  padding: calc(var(--pad) * .5 * var(--tier-pad)) calc(var(--pad) * .78 * var(--tier-pad));
+  /* The rail eats into the leading padding instead of adding to it, so text
+     starts at the same inset whatever the tier does to the rail. */
+  padding-inline-start: max(7px, calc(var(--pad) * .78 * var(--tier-pad) - var(--tier-rail)));
+  border: 1px solid var(--border);
+  border-inline-start: var(--tier-rail) solid var(--slot, var(--text-muted));
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+}
+
+/* RECENCY TIERS, assigned by ROW and never by index: the column count changes
+   with the viewport, so an index rule would tier the same tile differently on two
+   machines. What an older tier loses is CHROME - a thinner rail, a softer border,
+   a quieter label row. Never contrast, and never identity. */
+.utterance--tier-0 { --tier-type: 1;   --tier-pad: 1;   --tier-meta: 1;   --tier-rail: 5px; }
+.utterance--tier-1 { --tier-type: .87; --tier-pad: .82; --tier-meta: .93; --tier-rail: 4px; }
+.utterance--tier-2 { --tier-type: .78; --tier-pad: .66; --tier-meta: .87; --tier-rail: 3px; }
+.utterance--tier-3 { --tier-type: .71; --tier-pad: .54; --tier-meta: .83; --tier-rail: 2px; }
+
+/* Recede by EDGE, not by ink: the words keep full colour and full opacity. */
+.utterance--tier-2,
+.utterance--tier-3 { border-block-color: var(--border-soft); border-inline-end-color: var(--border-soft); }
+.utterance--tier-3 .utterance__meta { opacity: .82; }
+
+@keyframes utterance-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.utterance--new { animation: utterance-in 240ms ease-out; }
+
+/* The row that makes identity non-colour-alone: never optional, never truncated,
+   never dropped by a tier. Logical properties, so an RTL tile flips whole. */
+.utterance__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .05em .5em;
+  margin-bottom: .3em;
+  font-family: var(--font-mono);
+  font-size: max(.6rem, calc(clamp(.64rem, .76vw, .92rem) * var(--tier-meta)));
+  line-height: 1.3;
+}
+
+.utterance__lang {
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--slot, var(--text-secondary));
+}
+
+/* Isolated, or an RTL native name drags the Latin name around; body stack,
+   because a mono fallback for Arabic or CJK is whatever the system has. */
+.utterance__native {
+  font-family: var(--font-body);
+  color: var(--text-muted);
+  font-weight: 500;
+  unicode-bidi: isolate;
+}
+
+.utterance__also {
+  font-family: var(--font-body);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* max() is a legibility FLOOR: .85rem is a flat 13.6px, the smallest this
+   survived being read from the back of a room. It binds at tier 3 on a laptop. */
+.utterance__text {
+  margin: 0;
+  font-size: max(.85rem, calc(clamp(1rem, 1.15vw, 1.6rem) * var(--tier-type)));
+  line-height: 1.32;
+  font-weight: 600;
+  letter-spacing: -.005em;
+  overflow-wrap: break-word;
+  text-align: start;
+}
+
+/* unicode-bidi: isolate is load-bearing. An Arabic or Hebrew run would
+   otherwise reorder its neighbours - which here would look like a Melia error. */
+.word {
+  color: var(--slot, var(--text-primary));
+  unicode-bidi: isolate;
+}
+
+/* The mid-sentence flip. Weight and underline are a SECOND channel beside the
+   hue, so it survives colour-blindness, a washed-out bulb and the back row. */
+.word--switch {
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: .06em;
+  text-underline-offset: .16em;
+}
+
+/* Melia tagged no language. Still shown, but in plain ink: inheriting a slot
+   colour would draw a code-switch that never happened. Uncounted, too. */
+.word--unlabelled { color: var(--text-primary); }
+
+/* THE MONEY MOMENT, and deliberately a SIBLING of #wall rather than a child, so
+   an accumulating wall can never scroll the in-flight partial off screen. It
+   COLLAPSES when nothing is in flight - a reserved ~180px empty box read as
+   broken for the whole talk - and the display size lives on .live-line__text, so
+   only min-height and padding animate. */
+.live-line {
+  --live-pad: clamp(10px, 1vw, 18px);
+
+  display: grid;
+  align-content: center;
+  gap: .3em;
+  min-height: clamp(3.4rem, 5.6vw, 6.5rem);
+  padding: var(--live-pad) calc(var(--pad) * .9);
+  padding-inline-start: max(8px, calc(var(--pad) * .9 - 5px));
+  border: 1px solid var(--border);
+  border-inline-start: 5px solid var(--slot, var(--text-muted));
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  text-align: start;
+  overflow-wrap: break-word;
+  transition:
+    min-height 220ms cubic-bezier(.2, .7, .3, 1),
+    padding 220ms cubic-bezier(.2, .7, .3, 1),
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+/* Idle: a strip, not a box. A 5px coloured rail would claim a language. */
+.live-line.is-empty {
+  --live-pad: .42rem;
+
+  min-height: 0;
+  padding-inline-start: calc(var(--pad) * .9);
+  border-width: 1px;
+  border-style: dashed;
+  border-color: var(--border);
+  background: transparent;
+}
+
+.live-line__placeholder {
+  font-family: var(--font-mono);
+  font-size: clamp(.6rem, .72vw, .82rem);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.live-line__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .1em .6em;
+  font-family: var(--font-mono);
+  font-size: clamp(.66rem, .82vw, 1rem);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: .04em;
+}
+
+.live-line__dot {
+  flex: none;
+  width: .8em;
+  height: .8em;
+  border-radius: 3px;
+  background: var(--slot, var(--text-muted));
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.live-line__lang {
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--slot, var(--text-secondary));
+}
+
+.live-line__native {
+  font-family: var(--font-body);
+  color: var(--text-muted);
+  font-weight: 500;
+  unicode-bidi: isolate;
+}
+
+.live-line__also {
+  font-family: var(--font-body);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.live-line__text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 3.4rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+/* ========================================================= FOOTER ======== */
+
+.footer {
+  display: grid;
+  gap: calc(var(--gap) * .55);
+  min-width: 0;
+}
+
+/* Eyebrow on the line it names, never above it: worth ~24px of wall. */
+.footer__row {
+  display: flex;
+  align-items: center;
+  gap: .9em;
+  min-width: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3em .5em;
+  min-width: 0;
+
+  /* The page does not scroll, so an unbounded legend would eat the wall; a runaway
+     session degrades to a scrolling legend instead. */
+  max-height: 9vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--grid) transparent;
+}
+
+/* The swatch carries the slot colour, so the chip body stays brand. */
+.legend__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .4em;
+  padding: .16em .65em .2em .5em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+  font-size: clamp(.7rem, .88vw, 1rem);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.legend__swatch {
+  flex: none;
+  align-self: center;
+  width: .85em;
+  height: .85em;
+  border-radius: 3px;
+  background: var(--slot, var(--text-muted));
+}
+
+.legend__name   { font-weight: 700; color: var(--text-primary); }
+.legend__native { color: var(--text-muted); unicode-bidi: isolate; }
+
+.legend__count {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: .82em;
+}
+
+@keyframes legend-in {
+  from { opacity: 0; transform: scale(.9); }
+  to   { opacity: 1; transform: none; }
+}
+.legend__item--new { animation: legend-in 240ms ease-out; }
+
+/* #ribbon is a COMPONENT, not a bar: track, empty state and sr-only table in a
+   column. A fixed-height overflow:hidden flex ROW here clipped all three. */
+.ribbon {
+  display: flex;
+  flex-direction: column;
+  gap: .4em;
+  min-width: 0;
+  /* Tooltips escape upward out of the track, so nothing in here may clip. */
+  overflow: visible;
+}
+
+.ribbon__track {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  overflow: visible;
+}
+
+/* flex:1 keeps a weightless track at equal shares; the padding is hit target. */
+.ribbon__seg {
+  position: relative;
+  flex: 1 1 0;
+  min-inline-size: 4px;
+  padding-block: 6px;
+  cursor: default;
+}
+
+.ribbon__fill {
+  display: block;
+  block-size: clamp(8px, .8vw, 14px);
+  border-radius: 2px;
+  background: var(--slot, var(--text-muted));
+  transition: filter 120ms ease;
+}
+
+.ribbon__seg--other { --slot: var(--other); }
+
+/* The bed before anyone speaks, so the footer does not jump on the first. */
+.ribbon__seg--empty { --slot: var(--surface-2); }
+
+.ribbon__track > .ribbon__seg:first-child .ribbon__fill { border-start-start-radius: 5px; border-end-start-radius: 5px; }
+.ribbon__track > .ribbon__seg:last-child  .ribbon__fill { border-start-end-radius: 5px;   border-end-end-radius: 5px; }
+
+.ribbon__seg:hover .ribbon__fill { filter: brightness(1.14); }
+
+/* attr() inserts the attribute as TEXT and never parses it as markup, so a
+   language name off the wire cannot inject anything here. */
+.ribbon__seg[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  inset-block-end: calc(100% - 4px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  white-space: nowrap;
+  padding: .45em .7em;
+  border-radius: var(--radius-sm);
+
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--slot, var(--text-muted));
+  background: var(--surface-1);
+  color: var(--text-primary);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .4);
+  font-size: clamp(.72rem, .86vw, .92rem);
+  font-weight: 600;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 100ms ease;
+}
+
+.ribbon__seg[data-tip]:hover::after { opacity: 1; visibility: visible; }
+
+/* End segments anchor to their outer edge, so the widest tooltip stays on. */
+.ribbon__track > .ribbon__seg:first-child[data-tip]::after { inset-inline-start: 0; transform: none; }
+.ribbon__track > .ribbon__seg:last-child[data-tip]::after {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  transform: none;
+}
+
+.ribbon__empty {
+  font-family: var(--font-mono);
+  font-size: clamp(.58rem, .7vw, .8rem);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Key bar: bring your own key ---------------------------------------------- */
+
+/* The deployment holds no credential: the visitor pastes their own key, the
+   browser trades it for a short-lived one, and Start stays disabled until it
+   exists. Chrome, not hero - one compact row above the button. */
+.keybar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .45em .9em;
+  min-width: 0;
+}
+
+/* Input and show/hide button are ONE rounded surface, so they read as a field. */
+.keybar__field {
+  display: flex;
+  align-items: center;
+  flex: 1 1 22rem;
+  min-width: 0;
+  padding-inline: .95em .35em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+  transition: border-color 150ms;
+}
+
+.keybar__field:focus-within { border-color: var(--accent); }
+
+/* Mono: a key is a technical value, read character by character. */
+.keybar__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: .55em 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: clamp(.74rem, .85vw, .95rem);
+  letter-spacing: .04em;
+}
+
+.keybar__input:focus { outline: none; }   /* the field draws the focus ring */
+.keybar__input::placeholder { color: var(--text-muted); letter-spacing: .02em; }
+
+.keybar__eye,
+.keybar__clear {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: clamp(.58rem, .7vw, .8rem);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+
+.keybar__eye { padding: .5em .75em; border-radius: var(--radius-pill); }
+
+/* The .reset-btn treatment at key-bar scale: bordered, secondary, never accent. */
+.keybar__clear {
+  padding: .5em 1.1em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+}
+
+.keybar__eye:hover,
+.keybar__clear:hover { color: var(--text-primary); }
+.keybar__clear:hover { border-color: var(--accent); }
+
+.keybar__eye:focus-visible,
+.keybar__clear:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.keybar__remember {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .45em;
+  color: var(--text-secondary);
+  font-size: clamp(.72rem, .82vw, .95rem);
+  cursor: pointer;
+}
+
+/* accent-color paints the native tick jade - no custom checkbox, no SVG. */
+.keybar__remember input {
+  width: 1.05em;
+  height: 1.05em;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.keybar__remember input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.keybar__note {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: clamp(.66rem, .76vw, .85rem);
+}
+
+/* The status pill is the primary indicator; this repeats it at the field. */
+.keybar.is-set .keybar__field { border-color: var(--accent); }
+.keybar.is-set .keybar__label { color: var(--accent); }
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  min-width: 0;
+}
+
+/* The Flutter primary button. The 1.25rem FLOOR is a contrast decision: white on
+   jade is 3.17:1, the AA floor for LARGE text only, and 1.25rem clears the
+   18.66px bold threshold at every viewport. Do not lower it. */
+.mic-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55em;
+  min-height: clamp(46px, 3.5vw, 62px);
+  padding: 0 clamp(20px, 2vw, 36px);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-body);
+  font-size: clamp(1.25rem, 1.2vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  cursor: pointer;
+  transition: background 150ms, transform 60ms;
+}
+
+.mic-btn:active:not(:disabled) { transform: scale(.99); }
+.mic-btn:disabled { opacity: .45; cursor: default; }
+.mic-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* recordActive off the Flutter record button; white on it is 3.25:1. */
+.mic-btn.is-live { background: var(--record); color: #ffffff; }
+
+.mic-btn__icon {
+  flex: none;
+  width: .78em;
+  height: .78em;
+  border-radius: 50%;
+  background: currentColor;
+  transition: border-radius 150ms;
+}
+/* Circle idle, square live - readable from across the room before the label. */
+.mic-btn.is-live .mic-btn__icon { border-radius: 3px; }
+
+/* Secondary by construction: surface, not accent, and at the far end of the row
+   so it is never mistaken for Stop by someone reaching for the laptop. */
+.reset-btn {
+  flex: none;
+  min-height: clamp(46px, 3.5vw, 62px);
+  padding: 0 clamp(14px, 1.5vw, 26px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: clamp(.85rem, 1vw, 1.1rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+
+.reset-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+.reset-btn:active { transform: scale(.99); }
+.reset-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.meter {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: clamp(6px, .5vw, 10px);
+  border-radius: 5px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.meter__fill {
+  width: 0%;
+  height: 100%;
+  background: var(--accent);
+  transition: width 80ms linear;
+}
+
+/* Off screen, still read aloud - the ribbon table is what discharges the
+   light-mode contrast warning on slots 3, 4 and 5. On a plain block WRAPPER,
+   never the table itself: a table box ignores the 1px and stays full size. */
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Message text stays in ink: --critical clears 3:1 as a graphic but not 4.5:1 as
+   body text. The rail and the "!" mark carry the state. */
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: .6em;
+  margin: 0;
+  padding: .6em 1em;
+  border: 1px solid var(--border);
+  border-inline-start: 4px solid var(--critical);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-size: clamp(.85rem, 1vw, 1.05rem);
+}
+
+.error::before {
+  content: "!";
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35em;
+  height: 1.35em;
+  border-radius: 50%;
+  background: var(--critical);
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ===================================================== RESPONSIVE ======== */
+
+@media (max-width: 900px) {
+  .counter__value { font-size: clamp(2.4rem, 11vw, 4.5rem); }
+  .live-line__text { font-size: clamp(1.3rem, 5vw, 2.2rem); }
+  .keybar__note { display: none; }
+}
+
+@media (max-width: 560px) {
+  body { overflow: auto; }              /* a phone should scroll normally */
+  .topbar { grid-template-columns: minmax(0, 1fr); }
+  .counter { justify-content: flex-start; padding-inline-end: 0; }
+  .counter.is-tick .counter__value { transform-origin: 0 60%; }
+  .controls { flex-wrap: wrap; }
+  .mic-btn { flex: 1 1 100%; }
+  .reset-btn { flex: 1 1 auto; }
+  .keybar__field { flex-basis: 100%; }
+}
+
+/* Short-and-wide, e.g. 1080p with browser chrome: give the wall the space. */
+@media (max-height: 700px) {
+  .tagline { display: none; }
+  .counter__value { font-size: clamp(2.2rem, 5vw, 5rem); }
+  .live-line { min-height: clamp(2.8rem, 4.4vw, 5rem); }
+  .live-line__text { font-size: clamp(1.3rem, 2.1vw, 2.6rem); }
+}
+
+/* ================================================== ACCESSIBILITY ======== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Only the motion goes; nothing carries meaning the animation alone does. */
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Forced colours strips every custom property, so hue vanishes. The language
+   label already carries identity; these keep the structure readable. */
+@media (forced-colors: active) {
+  .utterance,
+  .live-line,
+  .legend__item,
+  .reset-btn,
+  .keybar__field,
+  .keybar__clear,
+  .error { border: 1px solid CanvasText; }
+
+  .legend__swatch,
+  .live-line__dot,
+  .ribbon__fill { border: 1px solid CanvasText; forced-color-adjust: none; }
+
+  .word--switch { text-decoration: underline; }
+}
+
+/* ============================================================================
+   DOM CONTRACT - who builds what, and with which class names.
+
+   data-series="1".."8" resolves --slot for an element and its descendants.
+   palette.js hands them out, cycling with (nth % 8) + 1, and a slot means "this
+   language needs a colour" - it is NOT a count: the counter comes from
+   wall.stats() over committed tiles only.
+
+   #wall        wall.js    .utterance tiles appended oldest-first and scrolled to
+                           follow the newest; exactly one .utterance--tier-0..3
+                           per tile, BY ROW. role="log" is in the HTML.
+   #live-line   wall.js    the in-flight partial only, and a SIBLING of #wall.
+                           .is-empty collapses it between utterances; a tile
+                           absorbs finals until the sentence ends and a language
+                           change never closes it.
+   #legend      main.js    .legend__item chips (+ --new), `hidden` on __native and
+                           __count. Emptied on reset, so the .eyebrow beside it
+                           has to sit outside the element.
+   #ribbon      ribbon.js  .ribbon__track (role="img" on the TRACK, never on
+                           #ribbon - it would hide the .sr-only table), plus
+                           .ribbon__empty and the .sr-only table.
+   #counter     main.js    .is-tick + data-series on increment, dropped on
+                           animationend; #counter-value holds the number.
+   #status      main.js    status--nokey | --idle | --connecting | --live |
+                           --error; label via textContent.
+   #toggle-btn  main.js    .is-live for stop, label in #toggle-label, `disabled`
+                           until a key exists.
+   #reset-btn   main.js    clears wall, counter, legend and ribbon together.
+   #meter-fill  main.js    style.width = "<0-100>%".
+   #error       main.js    `hidden` property; textContent is the message.
+   #keybar      main.js    .is-set while a key is held: #api-key (the value),
+                           #api-key-toggle (swaps password/text and its own
+                           Show/Hide label), #api-key-remember (session ->
+                           localStorage), #api-key-clear (clears both stores).
+
+   A tile is .utterance[data-series][dir][lang] over .utterance__meta and
+   .utterance__text of .word spans; each word carries its OWN data-series. */

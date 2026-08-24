@@ -3,8 +3,8 @@
 # Used by CLI tool for search, filtering, and scaffolding
 
 version: "1.0.0"
-last_updated: "2026-07-17"
-total_examples: 28
+last_updated: "2026-08-18"
+total_examples: 29
 
 # Example Categories
 categories:
@@ -342,8 +342,6 @@ examples:
     last_updated: "2025-12-30"
     estimated_time: "15 minutes"
 
-  # === USE CASES ===
-
   - id: "medical-transcription-realtime"
     title: "Medical Transcription"
     description: "Real-time medical transcription with custom medical vocabulary and HIPAA compliance considerations."
@@ -530,6 +528,21 @@ examples:
     last_updated: "2026-06-16"
     estimated_time: "5 minutes"
 
+  - id: "wall-of-voices"
+    title: "Wall of Voices"
+    description: "A stage demo that proves zero-configuration multilingual ASR to a room. One microphone is passed around the audience and Melia's per-word language tags paint every utterance onto a shared wall, coloured, labelled and correctly oriented, while a counter tracks the distinct languages detected. The browser holds the microphone and opens the Melia socket directly; a small Python token endpoint only exchanges a long-lived key for a short-lived one, and never sits in the audio path."
+    category: "use-cases"
+    difficulty: "intermediate"
+    languages: ["python", "javascript"]
+    features:
+      - "realtime-transcription"
+    integrations: []
+    path: "use-cases/10-wall-of-voices"
+    readme: "use-cases/10-wall-of-voices/README.md"
+    tags: ["melia", "multilingual", "code-switching", "realtime", "language-identification", "rtl", "demo", "conference", "bring-your-own-key"]
+    last_updated: "2026-08-18"
+    estimated_time: "15 minutes"
+
 # Integration Frameworks
 integration_frameworks:
   - id: "livekit"
@@ -547,7 +560,6 @@ integration_frameworks:
   - id: "vapi"
     title: "VAPI"
     url: "https://vapi.ai"
-
 
 # Community Subcategories
 community_subcategories:

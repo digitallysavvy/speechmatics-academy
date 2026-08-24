@@ -1,0 +1,31 @@
+# Wall of Voices Python dependencies
+#
+# The wall itself needs none of this. api/token.py is the whole backend and it
+# imports json, os, urllib and http.server, all standard library. Minting a key
+# is a single JSON POST, so the endpoint has nothing to install and nothing to
+# wait for.
+#
+# Everything below belongs to cli.py, the local-microphone example. That is
+# where the realtime SDK genuinely lives, because it needs a microphone and a
+# microphone only exists on the machine running Python. In the browser the audio
+# never passes through Python at all.
+#
+# Install for the CLI:  pip install -r requirements.txt
+
+# Speechmatics Real-Time SDK. Opens the Melia WebSocket from Python and yields
+# the same per-word `language` field the browser reads off the wire. cli.py only.
+speechmatics-rt>=1.1.0
+
+# Microphone support. speechmatics.rt's Microphone imports pyaudio lazily and
+# start() returns False when it is absent, so a missing install shows up as a
+# recording of silence rather than an ImportError. Worth installing on purpose.
+# cli.py only.
+#
+# Wheels are published for Windows only. macOS and Linux build from source and
+# need the PortAudio headers first (`brew install portaudio`, or
+# `sudo apt install portaudio19-dev`).
+pyaudio>=0.2.14
+
+# Reads .env so cli.py finds SPEECHMATICS_API_KEY the way the rest of the
+# academy does. cli.py only.
+python-dotenv>=1.2.2

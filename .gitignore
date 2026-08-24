@@ -82,6 +82,9 @@ output/
 !biome.json
 !components.json
 !vercel.json
+# ...except the wall-of-voices deploy config, which stays on the local machine.
+use-cases/10-wall-of-voices/vercel.json
+use-cases/10-wall-of-voices/api/requirements.txt
 
 
 # Logs
