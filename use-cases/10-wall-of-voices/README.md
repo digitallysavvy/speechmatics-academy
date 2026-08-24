@@ -172,9 +172,6 @@ Melia finalises when it is confident, not when the speaker finishes a sentence, 
 
 A speaker who trails off without punctuation would otherwise absorb whoever gets the microphone next, so `main.js` closes the open tile after a 1.5 second gap measured on Melia's word clock rather than the wall clock, and a 60-word cap backstops the case where punctuation never arrives at all. A wrong split costs one extra tile nobody notices; a wrong merge puts two people's sentences under one label in front of a room. Melia's finals run roughly three to six seconds behind the speaker, and partials arrive about two seconds ahead of their own finals. **This demo does not care, by design.** One person speaks at a time and the microphone is physically handed to the next, so the previous utterance settles on the wall inside the dead time a passed microphone creates for free.
 
-> [!CAUTION]
-> That is the property to protect if you extend the example. Anything that has to *answer* a speaker, such as a translation, a spoken reply or a turn-detection gate, turns a demo immune to Melia's latency into one held hostage by it.
-
 ### Bring your own key
 
 The key belongs to whoever is at the keyboard. Paste it into the key bar above the controls: a `type="password"` input with a **Show**/**Hide** toggle and a **Clear** button, with no `name` attribute and `autocomplete` off, so no password manager mistakes it for a login field.
@@ -190,9 +187,6 @@ The browser exchanges that key for a temporary realtime key by calling the Manag
 > **The temporary key, never the long-lived one, is what reaches the WebSocket.** It rides in the URL as `?jwt=`, because a browser's `WebSocket` constructor cannot set an `Authorization` header, and query strings end up in proxy logs and browser history. Sixty seconds is the API's floor and the whole containment strategy: a fresh key is minted per connection attempt, so the one that authorised a lost socket is already dead.
 
 The key is never logged, never put in a URL, never echoed back, and never sent anywhere but `mp.speechmatics.com` or this app's own `/api/token`. `api/token.py` silences its own request logging, returns an upstream status and never an upstream body, and answers everything `Cache-Control: no-store`.
-
-> [!WARNING]
-> **`/api/token` is unauthenticated.** It has no session, no cookie, no origin check and no rate limit, so anyone who reaches it can push their own key through it. What it cannot do is mint against *your* account, because there is no server key for it to use. Locally, a key in `.env` restores exactly that liability, which is why `dev_server.py` binds `127.0.0.1` as a hardcoded constant with no `HOST` variable to override it. To reach the wall from another device, put a tunnel or reverse proxy in front of it deliberately. A key in `localStorage` is also readable by any script on the origin, which is reasonable here only because this page loads no third-party script and fetches no webfont.
 
 ### cli.py: the same tags without a browser
 
