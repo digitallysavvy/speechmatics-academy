@@ -54,7 +54,7 @@ cp ../.env.example ../.env
 python main.py path/to/your-audio.wav
 ```
 
-If you place a file at `assets/sample.wav`, you can also run `python main.py` with no arguments.
+If you place a file at `assets/sample.m4a`, you can also run `python main.py` with no arguments.
 
 ## How It Works
 
@@ -73,41 +73,64 @@ The config is the whole story. This is what Melia needs:
 `main.py` submits that config with the audio file, waits for the job to finish, prints the plain-text transcript, then lists the languages Melia tagged across the words:
 
 ```python
-job = await client.submit_job(audio_file, config=melia)
+melia = TranscriptionConfig(language="multi", model=Model.MELIA_1)
+
+job = await client.submit_job(audio_file, transcription_config=melia)
 transcript = await client.wait_for_completion(job.id, format_type=FormatType.TXT)
 print(transcript)
 
-# Melia tags every word with its language; list the distinct ones.
+# Melia tags each word with the language it was recognized in.
 result = await client.get_transcript(job.id, format_type=FormatType.JSON)
 ```
 
-`wait_for_completion` does the waiting for you, so there is no polling loop to write.
+`wait_for_completion` does the waiting for you, so there is no polling loop to write. It checks once immediately and then every `polling_interval` seconds (default `5.0`), so pass a smaller interval if you are measuring how fast a job returns.
 
 > [!NOTE]
-> `melia-1` is the newest model and is not yet a typed field on the SDK's `TranscriptionConfig`, which still exposes only `operating_point`. The example subclasses `JobConfig` and sets `model` when the config is serialized.
+> `model` is a typed field on `TranscriptionConfig` as of `speechmatics-batch` 0.5.0, and `Model.MELIA_1` is the value for Melia. Older versions of this example subclassed `JobConfig` to inject `model` at serialization time; that workaround is no longer needed. Note that `model` supersedes the deprecated `operating_point` — setting both raises `ValueError`.
+
+If you would rather not manage the job in two calls, `client.transcribe()` wraps `submit_job` and `wait_for_completion` and returns a `Transcript` object:
+
+```python
+result = await client.transcribe(audio_file, transcription_config=melia)
+print(result.transcript_text)
+```
+
+One caveat if you take that route: Melia populates a `speaker` field on every word even when you have not asked for diarization, and `Transcript.transcript_text` prefixes each speaker's run with a label. The transcript then starts with `SPEAKER UU: `. Requesting `FormatType.TXT`, as this example does, returns clean text instead.
 
 ## Expected Output
 
 For the bundled sample, which switches from English into Latvian partway through:
 
 ```
-Speechmatics is a voice technology company that helps people and businesses work with spoken language in a smarter, faster and more efficient way. Instead of leaving speech only as audio, it turns conversations, recordings, meetings, interviews, and podcasts and live voice into useful. Digital Text. Lielākā vērtība ir tā spēja padarīt runu pieejamāku un vieglāk izmantojama ikdienas darbā. Tas palīdz uzņēmumiem ietaupīt laiku, uzlabot saziņu un veidot pakalpojumus, kas labāk saprot dažādas balsis.
+Speechmatics is a voice technology company that helps people and businesses work with spoken language in a smarter, faster, and more efficient way. Instead of leaving speech only as audio, it turns conversations, recordings, meetings, interviews and podcasts and live voice into useful digital texts. Lielākā vērtība ir tā spēja padarīt runu pieejamu un vieglāku izmantojamu ikdienas darbā. Tas palīdz uzņēmumiem attaupīt laiku, uzlabot saziņu un veidot pakalpojumus, kas labāk saprot dažādas balsis.
 
 Languages detected: en, lv
 ```
 
-The whole recording comes back as one transcript, even where it switches language mid-recording, and every word carries a language tag.
+Two things to notice. The whole recording comes back as one continuous piece of text, and the switch from English into Latvian happens mid-transcript without a second job, a second config, or a language chosen in advance. And the language tags are read back out of the result rather than being something you told the API to expect — `multi` is the only language you named.
+
+Exact wording will drift as the model is updated, so treat the transcript above as indicative rather than a fixture to diff against.
+
+> [!TIP]
+> Language labelling and transcription quality are separate concerns, and labelling is the more fragile of the two. The tag does not flip at the instant the speaker changes language — it lags while the detector accumulates evidence. On this recording the Latvian begins at 21.70s, but the first eight Latvian words are still tagged `en` and the tag only switches to `lv` at 25.48s, about 3.8 seconds in. The transcript is correct Latvian throughout; only the labels are late.
+>
+> So treat these tags as a reliable answer to "which languages are in this file" and an unreliable one to "which language is this specific word". If you are routing per word — picking a translation target, say, or a downstream voice — expect a few seconds of wrong labels after every switch, and verify against your own audio.
 
 ## Key Features Demonstrated
 
 - **One model, many languages**: a single config transcribes mixed-language audio without selecting a language up front.
 - **Code-switching**: the transcript stays continuous across language changes within a recording.
-- **Per-word language tags**: the json-v2 result tags each word with its language, so you can see exactly which languages appeared.
+- **Per-word language tags**: the json-v2 result carries a `language` field on each word's first alternative, and this example reads it to report which languages actually appeared. Note the lag at a switch, described under Expected Output.
 
 ## Configuration Options
 
-- **Diarization**: add `"diarization": "speaker"` to the `transcription_config` (in `MeliaJob.to_dict`) to label speakers.
-- **Output format**: this example requests `FormatType.TXT` for plain text. Use `FormatType.JSON` to get word-level timings and a `language` tag on every word.
+- **Diarization**: pass `diarization="speaker"` to `TranscriptionConfig` to label speakers. Melia accepts this. Labels arrive on each word's `alternatives[0].speaker`; the top-level `Transcript.speakers` list is not populated.
+- **Language hints**: `language_hints=["en", "lv"]` and `language_hints_strict` are accepted on Melia and bias recognition toward the languages you name.
+- **Output format**: this example requests `FormatType.TXT` for plain text. Use `FormatType.JSON` to get word-level timings, speaker labels, and the `language` tag on every word.
+
+### Not available on Melia
+
+Melia is a different model rather than a drop-in replacement, and the Batch API **rejects the job at submission** — a `400`, not a silent ignore — if you send a feature it does not support. Confirmed rejections: `translation_config`, `additional_vocab`, `punctuation_overrides`, `audio_filtering_config`, `audio_events_config`, entity detection, and summarization. If you need translation, transcribe with Melia and translate downstream, or use Enhanced for that job.
 
 ## Troubleshooting
 
@@ -115,13 +138,22 @@ The whole recording comes back as one transcript, even where it switches languag
 - Add your key to `.env` (copied from `.env.example`), or export it in your shell.
 
 **`model must be one of ...`**
-- Model identifiers can change over time. Confirm the current name for Melia in the [models documentation](https://docs.speechmatics.com/) and update `MeliaJob.to_dict` in `main.py`.
+- Model identifiers can change over time. Confirm the current name for Melia in the [models documentation](https://docs.speechmatics.com/), and check that your `speechmatics-batch` version is 0.5.0 or newer — `Model.MELIA_1` does not exist in earlier releases.
+
+**`Cannot specify both 'model' and 'operating_point'`**
+- `model` replaces the deprecated `operating_point`. Remove `operating_point` from your `TranscriptionConfig`.
+
+**`Additional property <name> is not allowed`**
+- You have combined Melia with a feature it does not support. See "Not available on Melia" above.
 
 **`No such file` or a file error**
-- Pass a path to an audio file as the first argument (`python main.py path/to/audio.wav`), or place one at `assets/sample.wav`.
+- Pass a path to an audio file as the first argument (`python main.py path/to/audio.wav`), or place one at `assets/sample.m4a`.
 
 **The transcript looks single-language**
 - The recording may be in one language. Melia still transcribes it; try a clip that switches languages to see code-switching in a single transcript.
+
+**`Languages detected` lists fewer languages than the recording contains**
+- Language labelling can miss a switch even when the transcript itself is correct. Check the transcript text first to confirm the other language was recognized. To narrow it down, submit a clip of just the missing language: if that returns the right tag, the detector is fine and it is the switch in your audio that is not being caught — a short pause between languages in continuous audio is the common cause.
 
 ## Resources
 
