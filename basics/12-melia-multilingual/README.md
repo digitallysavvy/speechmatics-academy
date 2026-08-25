@@ -108,11 +108,6 @@ Two things to notice. The whole recording comes back as one continuous piece of 
 
 Exact wording will drift as the model is updated, so treat the transcript above as indicative rather than a fixture to diff against.
 
-> [!TIP]
-> Language labelling and transcription quality are separate concerns, and labelling is the more fragile of the two. The tag does not flip at the instant the speaker changes language — it lags while the detector accumulates evidence. On this recording the Latvian begins at 21.70s, but the first eight Latvian words are still tagged `en` and the tag only switches to `lv` at 25.48s, about 3.8 seconds in. The transcript is correct Latvian throughout; only the labels are late.
->
-> So treat these tags as a reliable answer to "which languages are in this file" and an unreliable one to "which language is this specific word". If you are routing per word — picking a translation target, say, or a downstream voice — expect a few seconds of wrong labels after every switch, and verify against your own audio.
-
 ## Key Features Demonstrated
 
 - **One model, many languages**: a single config transcribes mixed-language audio without selecting a language up front.
