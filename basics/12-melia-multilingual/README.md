@@ -85,9 +85,6 @@ result = await client.get_transcript(job.id, format_type=FormatType.JSON)
 
 `wait_for_completion` does the waiting for you, so there is no polling loop to write. It checks once immediately and then every `polling_interval` seconds (default `5.0`), so pass a smaller interval if you are measuring how fast a job returns.
 
-> [!NOTE]
-> `model` is a typed field on `TranscriptionConfig` as of `speechmatics-batch` 0.5.0, and `Model.MELIA_1` is the value for Melia. Older versions of this example subclassed `JobConfig` to inject `model` at serialization time; that workaround is no longer needed. Note that `model` supersedes the deprecated `operating_point` — setting both raises `ValueError`.
-
 If you would rather not manage the job in two calls, `client.transcribe()` wraps `submit_job` and `wait_for_completion` and returns a `Transcript` object:
 
 ```python
