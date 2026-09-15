@@ -3,7 +3,7 @@
 # Used by CLI tool for search, filtering, and scaffolding
 
 version: "1.0.0"
-last_updated: "2026-09-14"
+last_updated: "2026-09-15"
 total_examples: 30
 
 # Example Categories
@@ -237,7 +237,7 @@ examples:
     path: "integrations/agora/01-conversational-ai-agent"
     readme: "integrations/agora/01-conversational-ai-agent/README.md"
     tags: ["agora", "conversational-ai", "rtc", "rtm", "voice-agent", "realtime"]
-    last_updated: "2026-09-14"
+    last_updated: "2026-09-15"
     estimated_time: "20 minutes"
 
   - id: "livekit-voice-assistant"

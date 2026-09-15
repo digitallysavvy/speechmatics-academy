@@ -98,10 +98,14 @@ async function waitForHealthyBackend(baseUrl: string, timeoutMs: number) {
 async function main() {
   const projectRoot = process.cwd()
   const serverRoot = path.resolve(projectRoot, '..', 'server')
-  const venvPython = path.join(serverRoot, 'venv', 'bin', 'python')
+  // CPython uses venv/bin/python on macOS and Linux, venv/Scripts/python.exe on Windows.
+  const venvPython =
+    process.platform === 'win32'
+      ? path.join(serverRoot, 'venv', 'Scripts', 'python.exe')
+      : path.join(serverRoot, 'venv', 'bin', 'python')
 
   if (!existsSync(venvPython)) {
-    throw new Error('Missing server/venv/bin/python. Run bun run setup:backend before verify:local.')
+    throw new Error(`Missing ${venvPython}. Run bun run setup:backend before verify:local.`)
   }
 
   const dependencyCheck = bunRuntime.Bun.spawnSync({

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 REQUIRED_KEYS = (
@@ -20,7 +21,7 @@ def read_values(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
     if not path.exists():
         return values
-    for raw_line in path.read_text().splitlines():
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -47,9 +48,9 @@ def set_value(lines: list[str], key: str, value: str) -> None:
 
 def ensure_env(target: Path, template: Path) -> tuple[list[str], list[str]]:
     if target.exists():
-        lines = target.read_text().splitlines()
+        lines = target.read_text(encoding="utf-8").splitlines()
     else:
-        lines = template.read_text().splitlines()
+        lines = template.read_text(encoding="utf-8").splitlines()
 
     values = read_values(target) if target.exists() else read_values(template)
     template_values = read_values(template)
@@ -70,7 +71,7 @@ def ensure_env(target: Path, template: Path) -> tuple[list[str], list[str]]:
 
     legacy_prefixes = tuple(f"{alias}=" for alias in LEGACY_ALIASES.values())
     lines = [line for line in lines if not line.startswith(legacy_prefixes)]
-    target.write_text("\n".join(lines).rstrip() + "\n")
+    target.write_bytes(("\n".join(lines).rstrip() + "\n").encode("utf-8"))
     return added, migrated
 
 
@@ -90,7 +91,7 @@ def print_next_steps(path: Path) -> None:
     print("Complete the remaining environment steps:")
     step = 1
     if "AGORA_APP_ID" in invalid or "AGORA_APP_CERTIFICATE" in invalid:
-        print(f"   {step}. Run: agora project env write server/.env")
+        print(f"   {step}. Run: agora project env write server/.env --template standard")
         step += 1
         print(f"   {step}. Run: bun run setup:env")
         step += 1
@@ -107,6 +108,12 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--next-steps", action="store_true")
     args = parser.parse_args()
+
+    # Windows consoles and pipes default to the locale codepage, which cannot
+    # encode this script's output. Ask for UTF-8 and degrade instead of raising.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
     server_dir = Path(__file__).resolve().parent.parent
     target = server_dir / ".env"

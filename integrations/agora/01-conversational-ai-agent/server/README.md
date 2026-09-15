@@ -17,7 +17,7 @@ bun run setup
 Agora credentials:
 
 ```bash
-agora project env write server/.env
+agora project env write server/.env --template standard
 bun run setup:env
 # Set SPEECHMATICS_API_KEY in server/.env.
 ```
@@ -33,8 +33,11 @@ This assumes the Agora CLI is installed and logged in. The command uses the proj
 If you are not using the Agora CLI, create the env file manually and fill in your project values:
 
 ```bash
-cp server/.env.example server/.env
+cp server/.env.example server/.env      # cmd.exe: copy server\.env.example server\.env
 ```
+
+Or let the project do it for you on any platform - `bun run setup:env` creates
+`server/.env` from the template and normalises the key layout.
 
 From `server/`:
 
@@ -44,13 +47,13 @@ Backend-only Agora CLI env write:
 
 ```bash
 agora project env write .env
-python3 scripts/setup_env.py
+python3 scripts/setup_env.py      # Windows: python scripts\setup_env.py
 ```
 
 Manual fallback:
 
 ```bash
-cp .env.example .env
+cp .env.example .env      # cmd.exe: copy .env.example .env
 ```
 
 `.env.example` is the committed reference template. `.env` is the only local
@@ -71,7 +74,7 @@ To select a specific existing project before writing env values:
 ```bash
 agora project use <project-id-or-name>
 agora project env write .env
-python3 scripts/setup_env.py
+python3 scripts/setup_env.py      # Windows: python scripts\setup_env.py
 ```
 
 To create a new project instead of using your default project:
@@ -80,7 +83,7 @@ To create a new project instead of using your default project:
 agora project create my-first-voice-agent --feature rtc --feature convoai
 agora project use my-first-voice-agent
 agora project env write .env
-python3 scripts/setup_env.py
+python3 scripts/setup_env.py      # Windows: python scripts\setup_env.py
 ```
 
 The setup script preserves configured values, adds the Speechmatics key
@@ -97,11 +100,26 @@ manager. The process environment takes precedence; do not ship a production
 ### 2. Install Dependencies
 
 **Option A: Using Virtual Environment (Recommended)**
+
+**On Windows:**
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements-dev.txt
 ```
+
+**On Mac/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements-dev.txt
+```
+
+> [!TIP]
+> From the repo root, `bun run setup:backend` does all of this for you on
+> either platform, and `bun run backend` starts the service without
+> activating anything - activation cannot be scripted portably, so the
+> project never relies on it.
 
 **Option B: Global Installation (Not Recommended)**
 ```bash
@@ -115,6 +133,10 @@ pip install -r requirements.txt
 python src/server.py
 ```
 
+> [!TIP]
+> `bun run backend` from the repo root does this without activation, and picks
+> the right interpreter on either platform.
+
 The service will start on port 8000 (or the port specified in `.env`).
 
 ## How This Fits The Repo
@@ -124,6 +146,11 @@ The service will start on port 8000 (or the port specified in `.env`).
 - Deployment: this Python service is required because the web app only forwards API requests through `AGENT_BACKEND_URL`.
 
 ### 4. Test API
+
+> [!NOTE]
+> The `curl` examples below assume a POSIX shell. In PowerShell use
+> `Invoke-RestMethod`, for example:
+> `Invoke-RestMethod -Method Post -Uri http://localhost:8000/startAgent -ContentType application/json -Body '{"channelName":"test_channel","rtcUid":123456,"userUid":789012}'`
 
 ```bash
 # Test config generation
