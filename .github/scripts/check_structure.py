@@ -23,7 +23,7 @@ INDEX_FILE = REPO_ROOT / "docs" / "index.yaml"
 EXAMPLE_CATEGORIES = ["basics", "integrations", "use-cases", "community"]
 
 # Known non-example directories at the integration level (contain sub-projects)
-INTEGRATION_PARENTS = {"livekit", "pipecat", "twilio", "vapi", "tambourine", "vercel"}
+INTEGRATION_PARENTS = {"agora", "livekit", "pipecat", "twilio", "vapi", "tambourine", "vercel"}
 
 # Community subcategories (act like integration parents — contain project directories)
 COMMUNITY_SUBCATEGORIES = {"use-cases", "integrations", "tools", "experiments"}
