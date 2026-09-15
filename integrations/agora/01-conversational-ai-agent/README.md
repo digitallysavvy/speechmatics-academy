@@ -17,6 +17,8 @@ adapted from Agora's [Python quickstart](https://github.com/AgoraIO-Conversation
 Speechmatics replaces the quickstart's default speech-to-text provider while
 the managed OpenAI LLM and MiniMax TTS remain unchanged.
 
+![Recording of the demo: the browser joins the Agora channel and Ada opens with a spoken greeting, a question about Speechmatics is transcribed into the live transcript as it is spoken, the agent answers aloud while the orb shows its talking state, and the header fills in real ASR, LLM and TTS latency for the turn](assets/agora-conversational-ai.gif)
+
 ## What You'll Learn
 
 - How Speechmatics fits into an Agora Conversational AI pipeline
@@ -181,9 +183,23 @@ from agora_agent.agentkit.vendors import SpeechmaticsSTT
 stt = SpeechmaticsSTT(
     key=self.speechmatics_api_key,
     language="en",
-    uri="wss://eu2.rt.speechmatics.com/v2",
+    uri="wss://global.rt.speechmatics.com/v2",
+    additional_params={
+        "additional_vocab": [
+            {"content": "Speechmatics", "sounds_like": ["speech matics", "speech mattox"]},
+        ],
+    },
 )
 ```
+
+`additional_params` is merged into the provider `params` alongside `key`,
+`language`, and `uri`, so anything Speechmatics accepts in its
+`transcription_config` can be passed through. This demo uses it for a custom
+dictionary: recognition is accurate on clean audio, but microphone input only
+reaches the provider after Opus encoding and noise suppression on the RTC leg,
+where "Speechmatics" degrades to "speech Mattox". Listing the spellings you
+expect keeps the live transcript readable — add your own product terms the same
+way.
 
 The demo pins `agora-agents==2.6.1` and passes the credential through `key`.
 Its regression tests verify that the SDK serializes this as `params.key`, not
@@ -263,6 +279,18 @@ bun run verify:local
 - Confirm the FastAPI process is running on port `8000`.
 - For deployment, set `AGENT_BACKEND_URL` for the Next.js server to the public
   FastAPI URL.
+- Set `AGENT_BACKEND_URL` when you **build**, not only when you start.
+  `web/next.config.ts` reads it inside `rewrites()`, and Next evaluates that at
+  build time: if the variable was unset then, the `/api/*` rewrites are baked
+  out of the build and every request returns 404 even though the variable is
+  present at runtime. Rebuild with it set:
+
+```bash
+cd web && AGENT_BACKEND_URL=https://your-backend.example.com bun run build
+```
+
+  `bun run dev` is unaffected, because `dev:frontend` sets the variable inline
+  before starting Next.
 
 **A supported Python was not found**
 

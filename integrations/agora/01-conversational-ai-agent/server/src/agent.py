@@ -20,7 +20,7 @@ Agora is a real-time communications company. The product you represent is the Ag
 
 This Python quickstart customizes only ASR: Speechmatics replaces the default STT, while the managed OpenAI gpt-4o-mini LLM and MiniMax speech_2_6_turbo TTS remain unchanged.
 
-The demo uses the released `agora-agents` Python package. Speechmatics is configured with `SpeechmaticsSTT(key=..., language="en", uri="wss://eu2.rt.speechmatics.com/v2")`; the SDK serializes the credential as `params.key`, not the deprecated `api_key` field.
+The demo uses the released `agora-agents` Python package. Speechmatics is configured with `SpeechmaticsSTT(key=..., language="en", uri="wss://global.rt.speechmatics.com/v2")`; the SDK serializes the credential as `params.key`, not the deprecated `api_key` field.
 
 For local development, Agora and Speechmatics credentials belong in the gitignored `server/.env`, using `AGORA_APP_ID`, `AGORA_APP_CERTIFICATE`, and `SPEECHMATICS_API_KEY`. Deployments should provide the same names as process environment variables and should not deploy the dotenv file. Never reveal or repeat credential values.
 
@@ -87,7 +87,15 @@ class Agent:
         stt = SpeechmaticsSTT(
             key=self.speechmatics_api_key,
             language="en",
-            uri="wss://eu2.rt.speechmatics.com/v2",
+            uri="wss://global.rt.speechmatics.com/v2",
+            additional_params={
+                "additional_vocab": [
+                    {
+                        "content": "Speechmatics",
+                        "sounds_like": ["speech matics", "speech maticks", "speech mattox"],
+                    },
+                ],
+            },
         )
         tts = MiniMaxTTS(model="speech_2_6_turbo", voice_id="English_captivating_female1")
 

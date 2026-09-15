@@ -79,9 +79,15 @@ def test_start_wires_managed_openai_and_returns_shape(fake_env, monkeypatch):
     assert "vendor" not in captured["llm"]  # managed OpenAI has no custom vendor key
     assert captured["stt"]["vendor"] == "speechmatics"
     assert captured["stt"]["params"] == {
+        "additional_vocab": [
+            {
+                "content": "Speechmatics",
+                "sounds_like": ["speech matics", "speech maticks", "speech mattox"],
+            }
+        ],
         "key": "speechmatics-test-key",
         "language": "en",
-        "uri": "wss://eu2.rt.speechmatics.com/v2",
+        "uri": "wss://global.rt.speechmatics.com/v2",
     }
     assert "api_key" not in captured["stt"]["params"]
     assert captured["channel"] == "ch"

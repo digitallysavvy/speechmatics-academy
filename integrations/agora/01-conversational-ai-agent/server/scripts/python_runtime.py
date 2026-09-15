@@ -84,10 +84,7 @@ def check_venv(venv_dir: Path) -> Tuple[int, int]:
     executable = venv_python(venv_dir)
     version = python_version(executable) if executable.exists() else None
     if version is None:
-        raise RuntimeError(
-            f"No usable interpreter at {executable}; "
-            "run: bun run setup:backend --recreate"
-        )
+        raise RuntimeError(f"No usable interpreter at {executable}; run: bun run setup:backend --recreate")
     if version < MIN_VERSION:
         raise RuntimeError(
             f"{executable} is Python {version[0]}.{version[1]}, but "
