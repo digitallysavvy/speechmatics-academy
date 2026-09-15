@@ -229,7 +229,7 @@ examples:
     description: "Browser-based voice agent with Agora RTC/RTM, managed agent orchestration, and Speechmatics real-time transcription."
     category: "integrations"
     difficulty: "intermediate"
-    languages: ["python"]
+    languages: ["python", "typescript"]
     features:
       - "realtime-transcription"
       - "voice-agents"

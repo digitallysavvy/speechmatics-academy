@@ -8,10 +8,10 @@
 
 </div>
 
-This guide uses Agora's maintained Python quickstart rather than duplicating its
-FastAPI backend and Next.js client in the Academy. The demo replaces the
-quickstart's default speech-to-text provider with Speechmatics while retaining
-the managed OpenAI LLM and MiniMax TTS.
+This example includes a runnable Python FastAPI backend and Next.js client,
+adapted from Agora's [Python quickstart](https://github.com/AgoraIO-Conversational-AI/agent-quickstart-python).
+Speechmatics replaces the quickstart's default speech-to-text provider while
+the managed OpenAI LLM and MiniMax TTS remain unchanged.
 
 ## What You'll Learn
 
@@ -30,16 +30,15 @@ the managed OpenAI LLM and MiniMax TTS.
 
 ## Quick Start
 
-The complete implementation lives in the official
-[`agent-quickstart-python`](https://github.com/AgoraIO-Conversational-AI/agent-quickstart-python)
-repository. Clone it so fixes to the Agora client, token flow, and agent
-lifecycle continue to come from one maintained source.
+The implementation is in this Academy example: `server/` owns credentials,
+tokens, and the agent lifecycle; `web/` owns the browser call UI. The root
+`package.json` starts both processes together.
 
-**Step 1: Clone the demo**
+**Step 1: Clone the Academy and enter the example**
 
 ```bash
-git clone https://github.com/AgoraIO-Conversational-AI/agent-quickstart-python.git speechmatics-agora-python
-cd speechmatics-agora-python
+git clone https://github.com/speechmatics/speechmatics-academy.git
+cd speechmatics-academy/integrations/agora/01-conversational-ai-agent
 ```
 
 **Step 2: Select and configure your Agora project**
@@ -121,6 +120,10 @@ The demo pins `agora-agents==2.6.1` and passes the credential through `key`.
 Its regression tests verify that the SDK serializes this as `params.key`, not
 the deprecated `api_key` field.
 
+See [`server/src/agent.py`](server/src/agent.py) for the provider configuration
+and [`web/src/components/QuickstartPipelineMetrics.tsx`](web/src/components/QuickstartPipelineMetrics.tsx)
+for the ASR/LLM/TTS latency display.
+
 ## Expected Output
 
 After **Start conversation** is selected:
@@ -159,7 +162,7 @@ closest to your users.
 ## Verification
 
 The demo includes backend unit tests, browser helper tests, API contract checks,
-and a production web build:
+and a production web build. Run these from the example root after `bun run setup`:
 
 ```bash
 server/venv/bin/python -m pytest server/tests
@@ -195,6 +198,9 @@ bun run verify:local
 ## Resources
 
 - [Agora Python demo](https://github.com/AgoraIO-Conversational-AI/agent-quickstart-python)
+- [Included backend guide](server/README.md)
+- [Included architecture guide](ARCHITECTURE.md)
+- [Quickstart license](LICENSE)
 - [Agora Conversational AI documentation](https://docs.agora.io/en/conversational-ai/overview/product-overview)
 - [Speechmatics documentation](https://docs.speechmatics.com/)
 - [Speechmatics Portal](https://portal.speechmatics.com/)

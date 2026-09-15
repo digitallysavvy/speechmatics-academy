@@ -7,7 +7,7 @@ Checks:
   1. Every cataloged example path exists
   2. Every example has a README.md
   3. Every example has a .env.example
-  4. Python examples have requirements.txt (in python/ subdir or project root)
+  4. Python examples have requirements.txt (in python/, server/, or project root)
   5. total_examples count matches actual entries
   6. Orphaned example directories not in catalog
 """
@@ -145,9 +145,9 @@ def main() -> int:
 
         # --- Check 5: Python requirements.txt ---
         if "python" in ex.get("languages", []):
-            has_requirements = (ex_path / "python" / "requirements.txt").is_file() or (
-                ex_path / "requirements.txt"
-            ).is_file()
+            has_requirements = any(
+                (ex_path / subdir / "requirements.txt").is_file() for subdir in ("python", "server", "")
+            )
             has_pyproject = (ex_path / "pyproject.toml").is_file()
             if not has_requirements and not has_pyproject:
                 warnings.append(f"[{ex['id']}] no requirements.txt or pyproject.toml found in {ex['path']}")
